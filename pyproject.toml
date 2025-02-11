@@ -1,0 +1,136 @@
+[project]
+name = "probabilistic_trading"
+version = "0.1.0"
+description = "probabilistic-based trading system using nautilus_trader"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "jupyterlab>=4.3.5",
+    "matplotlib>=3.10.0",
+    "nautilus-trader>=1.211.0",
+    "numba>=0.61.0",
+    "numpy>=2.1.3",
+    "pandas>=2.2.3",
+    "pomegranate>=1.1.2",
+    "scikit-learn>=1.6.1",
+    "seaborn>=0.13.2",
+    "torch>=2.6.0",
+    "xgboost>=2.1.4",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.4",
+    "docformatter>=1.7.5",
+    "pre-commit>=4.1.0",
+    "black>=25.1.0",
+    "ruff>=0.0.291",
+    "mypy>=1.0.0"
+]
+
+[tool.black]
+target_version = ["py311", "py312"]
+line_length = 100
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+exclude = [
+    ".benchmarks",
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "build",
+    "dist",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "C4",   # flake8-comprehensions
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "C90",  # mccabe
+    "D",    # pydocstyle
+    "UP",   # pyupgrade
+    "S",    # bandit
+    "T10",  # flake8-debugger
+    "ICN",  # flake8-import-conventions
+    "PIE",  # flake8-pie
+    "PYI",  # flake8-pyi
+    "Q",    # flake8-quotes
+    "I",    # isort
+    "RSE",  # flake8-raise
+    "TID",  # flake8-tidy-imports
+    "PD",   # pandas-vet
+    "NPY",  # numpy rules
+    "RUF",  # ruff-specific rules
+]
+
+ignore = [
+    "D100",  # Missing docstring in public module
+    "D101",  # Missing docstring in public class
+    "D102",  # Missing docstring in public method
+    "D103",  # Missing docstring in public function
+    "D104",  # Missing docstring in public package
+    "D105",  # Missing docstring in magic method
+    "D107",  # Missing docstring in __init__
+    "D200",  # One-line docstring should fit on one line with quotes
+    "D203",  # 1 blank line required before class docstring
+    "D205",  # 1 blank line required between summary line and description
+    "D212",  # Multi-line docstring summary should start at the first line
+    "D400",  # First line should end with a period
+    "D413",  # Missing blank line after last section
+    "D415",  # First line should end with a period, question mark, or exclamation point
+    "D416",  # Section name should end with a colon
+    "E741",  # Ambiguous variable name
+    "PD901", # DataFrame variable name
+    "RUF012", # Mutable class attributes
+    "S101",  # Use of assert detected
+    "S105",  # Possible hardcoded password
+    "S106",  # Possible hardcoded password
+    "S113",  # Requests without timeout
+    "S603",  # Subprocess without input validation
+]
+
+fixable = ["ALL"]
+unfixable = []
+
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.isort]
+force-single-line = true
+single-line-exclusions = ["typing"]
+lines-after-imports = 2
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.docformatter]
+black = true
+make-summary-multi-line = true
+pre-summary-new-line = true
+blank = true
+recursive = true
+in-place = true
+
+[tool.mypy]
+python_version = "3.12"
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["probabilistic_trading"]
