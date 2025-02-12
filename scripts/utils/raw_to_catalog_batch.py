@@ -168,9 +168,9 @@ def process_raw_data(
 
 if __name__ == "__main__":
     # 示例使用
-    RAW_DATA_PATH = "/Users/ohh/Desktop/Code/NautilusTraders/data/binance/futures"
-    PROCESSED_DATA_PATH = "/Users/ohh/Desktop/Code/NautilusTraders/data/binance/futures_processed"
-    CATALOG_PATH = "/Users/ohh/Desktop/Code/NautilusTraders/data/catalog"
+    RAW_DATA_PATH = "data/binance/futures"
+    PROCESSED_DATA_PATH = "data/binance/futures_processed"
+    CATALOG_PATH = "data/catalog"
 
     process_raw_data(
         raw_data_path=RAW_DATA_PATH,

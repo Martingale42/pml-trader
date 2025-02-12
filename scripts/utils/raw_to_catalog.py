@@ -24,7 +24,7 @@ load_dotenv(dotenv_path=env_path)
 
 
 def parse_instrument_string(instrument_string: str) -> dict[str, str]:
-    """解析交易對文件名，提取相關信息"""
+    """解析交易對文件名, 提取相關信息"""
     pattern = r"(?P<base_pair>[A-Z]+)_(?P<quote_pair>[A-Z]+)_[A-Z]+-(?P<timeframe>\d+[a-zA-Z]+)-(?P<instrument_type>[a-z]+)(-processed)?\.parquet"
     match = re.match(pattern, instrument_string)
     if match:
@@ -74,15 +74,13 @@ async def create_provider():
 
 
 if __name__ == "__main__":
-    btcusdt_perp = pd.read_parquet(
-        "/Users/ohh/Desktop/Code/NautilusTraders/data/binance/futures/BTC_USDT_USDT-5m-futures.parquet"
-    )
+    btcusdt_perp = pd.read_parquet("data/binance/futures/BTC_USDT_USDT-5m-futures.parquet")
     btcusdt_perp.rename(columns={"date": "timestamp"}, inplace=True)
     btcusdt_perp.set_index("timestamp", inplace=True)
     btcusdt_perp.sort_values("timestamp", inplace=True)
     # print(btcusdt_perp.head())
 
-    output_path = Path("/Users/ohh/Desktop/Code/NautilusTraders/data/binance/futures_processed")
+    output_path = Path("data/binance/futures_processed")
     output_path.mkdir(parents=True, exist_ok=True)
     btcusdt_perp.to_parquet(output_path / "BTC_USDT_USDT-5m-futures-processed.parquet")
 
@@ -110,9 +108,9 @@ if __name__ == "__main__":
         btcusdt_perp_bar = wrangler.process(btcusdt_perp)
 
         # 指定CATALOG_PATH
-        CATALOG_PATH = Path("/Users/ohh/Desktop/Code/NautilusTraders/data/catalog")
+        CATALOG_PATH = Path("data/catalog")
 
-        # 如果CATALOG_PATH存在，將其刪除並重建
+        # 如果CATALOG_PATH存在, 將其刪除並重建
         if CATALOG_PATH.exists():
             import shutil
 
