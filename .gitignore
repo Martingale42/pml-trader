@@ -22,6 +22,7 @@ wheels/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+.DS_Store
 
 # Virtual Environment
 .env
