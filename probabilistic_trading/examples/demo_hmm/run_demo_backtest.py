@@ -77,14 +77,14 @@ def main():
         config=DemoHMMStrategyConfig(
             instrument_id=instrument.id,
             bar_type=BarType.from_str(bar_type),
-            position_size=Quantity.from_str("100"),
+            position_size=Quantity.from_str("700"),
             prob_threshold=0.8,
         )
     )
     engine.add_strategy(strategy)
 
     input("Press Enter to start backtest...")
-    sleep(5)
+    sleep(1)
     # 運行回測
     engine.run()
 

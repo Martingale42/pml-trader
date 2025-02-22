@@ -37,6 +37,10 @@ class DemoHMMStrategy(Strategy):
 
     def on_start(self):
         """訂閱數據"""
+        self.instrument = self.cache.instrument(self.config.instrument_id)
+        if self.instrument is None:
+            self.log.error(f"No instrument found for {self.config.instrument_id}")
+            return
         self.subscribe_bars(self.config.bar_type)
         self.subscribe_data(DataType(DemoHMMStateData))
 
@@ -83,8 +87,7 @@ class DemoHMMStrategy(Strategy):
         order = self.order_factory.market(
             instrument_id=self.config.instrument_id,
             order_side=OrderSide.BUY,
-            # quantity=self.instrument.make_qty(self.config.position_size),
-            quantity=self.config.position_size,
+            quantity=self.instrument.make_qty(self.config.position_size),
         )
         self.submit_order(order)
 
@@ -93,8 +96,7 @@ class DemoHMMStrategy(Strategy):
         order = self.order_factory.market(
             instrument_id=self.config.instrument_id,
             order_side=OrderSide.SELL,
-            # quantity=self.instrument.make_qty(self.config.position_size),
-            quantity=self.config.position_size,
+            quantity=self.instrument.make_qty(self.config.position_size),
         )
         self.submit_order(order)
 

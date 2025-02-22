@@ -80,9 +80,11 @@ class DemoHMMActor(Actor):
             # 進行預測
             self.log.info("Predicting state")
             self.log.info(f"Predicting features has {features.shape} shape")
-            state = self.model.predict(features)  # 取最後一個時間步的狀態
-            probas = self.model.predict_proba(features)  # 該狀態的概率
-            state_proba = probas[state]
+            states = self.model.predict(features)  # 取全部時間步的狀態
+            probas = self.model.predict_proba(features)[0]  # 取最新狀態的概率矩陣
+
+            state = states[0]  # 取最新狀態是在[0]
+            state_proba = probas[state]  # 取最新狀態的機率
 
             # 發布狀態數據
             self.log.info(f"Predicted state: {state}, proba: {state_proba}")

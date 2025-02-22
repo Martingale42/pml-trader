@@ -14,11 +14,9 @@
 #     name: python3
 # ---
 
-# %%
 from dataclasses import dataclass
 from functools import partial
 
-# %%
 import jax.numpy as jnp
 import jax.random as jr
 import optax
@@ -29,7 +27,6 @@ from dynamax.hidden_markov_model import SphericalGaussianHMM
 from jax import vmap
 
 
-# %%
 @dataclass(frozen=True)
 class HMMConfig:
     """
@@ -199,13 +196,9 @@ class HMMModel:
             預測的狀態序列
         """
         self._check_is_fitted()
-        # self._validate_predict_data(data)
 
-        # 確保數據是正確的形狀
-        # if data.ndim == 2:
-        #     data = data.reshape(1, *data.shape)
-
-        return self._model.most_likely_states(self._params, data)[-1]  # 取第一個序列的結果
+        # return self._model.most_likely_states(self._params, data)[-1]  # 取序列的最後一個結果
+        return self._model.most_likely_states(self._params, data)  # 取一個序列的結果
 
     def predict_proba(self, data: jnp.ndarray) -> jnp.ndarray:
         """
@@ -222,14 +215,10 @@ class HMMModel:
             後驗概率矩陣
         """
         self._check_is_fitted()
-        # self._validate_predict_data(data)
-
-        # 確保數據是正確的形狀
-        # if data.ndim == 2:
-        #     data = data.reshape(1, *data.shape)
 
         posterior = self._model.smoother(self._params, data)
-        return posterior.smoothed_probs[-1]  # 取第一個序列的結果
+        # return posterior.smoothed_probs[-1]  # 取序列的最後一個結果
+        return posterior.smoothed_probs  # 取一個序列的結果
 
     def filter(self, data: jnp.ndarray) -> jnp.ndarray:
         """
@@ -294,6 +283,3 @@ class HMMModel:
         """獲取模型參數。"""
         self._check_is_fitted()
         return self._params
-
-
-# %%
