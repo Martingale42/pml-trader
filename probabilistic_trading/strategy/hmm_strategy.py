@@ -17,7 +17,8 @@ from probabilistic_trading.model.hmm.hmm_data import HMMStateData
 
 class HMMStrategyConfig(StrategyConfig):
     instrument_id: InstrumentId
-    prob_threshold: float = 0.7
+    bar_type: str
+    prob_threshold: float = 0.75
     position_size: Decimal = Decimal("100.0")
 
 
@@ -25,7 +26,7 @@ class HMMStrategy(Strategy):
     def __init__(self, config: HMMStrategyConfig):
         super().__init__(config)
         # 策略配置
-        self.bar_type = BarType.from_str(f"{config.instrument_id}-15-MINUTE-LAST-EXTERNAL")
+        self.bar_type = BarType.from_str(config.bar_type)
         self.current_state = None
         self.state_proba = None
 
@@ -89,19 +90,19 @@ class HMMStrategy(Strategy):
                 self.cancel_all_orders(self.config.instrument_id)
                 self._long()
             elif self.portfolio.is_net_short(self.config.instrument_id):
-                self.close_all_positions(self.config.instrument_id)
                 self.cancel_all_orders(self.config.instrument_id)
+                self.close_all_positions(self.config.instrument_id)
                 self._long()
         # SELL LOGIC
-        elif self.current_state == 2 and self.state_proba > self.config.prob_threshold:
+        elif self.current_state == 1 and self.state_proba > self.config.prob_threshold:
             if self.portfolio.is_net_short(self.config.instrument_id):
                 return
             if self.portfolio.is_flat(self.config.instrument_id):
                 self.cancel_all_orders(self.config.instrument_id)
                 self._short()
             elif self.portfolio.is_net_long(self.config.instrument_id):
-                self.close_all_positions(self.config.instrument_id)
                 self.cancel_all_orders(self.config.instrument_id)
+                self.close_all_positions(self.config.instrument_id)
                 self._short()
 
     def _long(self) -> None:
@@ -115,7 +116,9 @@ class HMMStrategy(Strategy):
             order_side=OrderSide.BUY,
             quantity=self.instrument.make_qty(quantity),
         )
-        position_id = PositionId(f"{self.config.instrument_id}-LONG")
+        position_id = PositionId(
+            f"{self.config.instrument_id}-LONG-{self.cache.bar_count(self.bar_type)}"
+        )
         self.submit_order(order, position_id)
 
     def _short(self) -> None:
@@ -129,7 +132,9 @@ class HMMStrategy(Strategy):
             order_side=OrderSide.SELL,
             quantity=self.instrument.make_qty(quantity),
         )
-        position_id = PositionId(f"{self.config.instrument_id}-SHORT")
+        position_id = PositionId(
+            f"{self.config.instrument_id}-SHORT-{self.cache.bar_count(self.bar_type)}"
+        )
         self.submit_order(order, position_id)
 
     def on_stop(self):

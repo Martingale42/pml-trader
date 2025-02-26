@@ -15,6 +15,7 @@
 # ---
 
 # %%
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -40,14 +41,22 @@ from probabilistic_trading.strategy.hmm_strategy import HMMStrategyConfig
 
 # %%
 def main():
+    # 設定回測變數
+    backtest_time_start = "2024-01-01"
+    backtest_time_end = "2024-01-31"
+    backtest_timerange = f"{backtest_time_start}__{backtest_time_end}"
+    backtest_timeframe = "15-MINUTE"
+    current_time = datetime.now().strftime("%Y-%m-%d__%H_%M_%S")
+
     # Initialize backtest engine
     engine_config = BacktestEngineConfig(
         trader_id=TraderId("BACKTEST_TRADER-001"),
         logging=LoggingConfig(
             log_level="INFO",  # Changed to INFO for less verbose output
+            log_file_name=f"BACKTEST_TRADER-001_{current_time}_{backtest_timeframe}_{backtest_timerange}.log",
             log_level_file="DEBUG",
             log_file_format="json",
-            log_component_levels={"Portfolio": "INFO"},  # Add component-specific logging
+            log_component_levels={"Portfolio": "DEBUG"},  # Add component-specific logging
         ),
     )
     engine = BacktestEngine(config=engine_config)
@@ -60,7 +69,7 @@ def main():
         account_type=AccountType.MARGIN,
         starting_balances=[Money(1_000, USDT)],
         base_currency=USDT,
-        default_leverage=Decimal("20"),
+        default_leverage=Decimal("5.0"),
     )
 
     # Load data from your catalog
@@ -75,12 +84,14 @@ def main():
     engine.add_instrument(instrument)
 
     # Now load bar data
-    bar_type = f"{instrument.id}-15-MINUTE-LAST-EXTERNAL"
+    bar_type = f"{instrument.id}-{backtest_timeframe}-LAST-EXTERNAL"
     print(f"Loading bars for {bar_type}")
 
     bars = catalog.query(
         data_cls=Bar,
         bar_types=[bar_type],
+        start=backtest_time_start,
+        end=backtest_time_end,
     )
 
     if not bars:
@@ -92,16 +103,17 @@ def main():
     # Initialize strategy and actor with your configurations
     strategy_config = HMMStrategyConfig(
         instrument_id=instrument.id,
-        prob_threshold=0.7,
-        position_size=Decimal("700"),
+        bar_type=bar_type,
+        prob_threshold=0.75,
+        position_size=Decimal("4000"),
     )
     strategy = HMMStrategy(config=strategy_config)
 
     hmm_actor_config = HMMActorConfig(
         instrument_id=instrument.id,
-        n_states=3,
-        min_training_bars=288,
-        update_interval=3,
+        bar_type=bar_type,
+        n_states=2,
+        min_training_bars=672,
         pca_components=5,
     )
     hmm_actor = HMMActor(config=hmm_actor_config)

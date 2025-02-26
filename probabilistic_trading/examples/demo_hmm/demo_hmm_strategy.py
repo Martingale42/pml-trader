@@ -16,7 +16,7 @@ class DemoHMMStrategyConfig(StrategyConfig, frozen=True):
     """策略配置"""
 
     instrument_id: InstrumentId
-    bar_type: BarType
+    bar_type: str
     position_size: Decimal = Decimal("1.0")
     prob_threshold: float = 0.8
 
@@ -32,6 +32,7 @@ class DemoHMMStrategy(Strategy):
 
     def __init__(self, config: DemoHMMStrategyConfig):
         super().__init__(config)
+        self.bar_type = BarType.from_str(config.bar_type)
         self.processed_signals = 0
         self.current_state = None
 
@@ -41,7 +42,7 @@ class DemoHMMStrategy(Strategy):
         if self.instrument is None:
             self.log.error(f"No instrument found for {self.config.instrument_id}")
             return
-        self.subscribe_bars(self.config.bar_type)
+        self.subscribe_bars(self.bar_type)
         self.subscribe_data(DataType(DemoHMMStateData))
 
     def on_data(self, data: Data) -> None:

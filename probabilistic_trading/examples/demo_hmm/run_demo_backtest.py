@@ -1,7 +1,6 @@
 # examples/demo_hmm/run_demo_backtest.py
 from decimal import Decimal
 from pathlib import Path
-from time import sleep
 
 import pandas as pd
 from nautilus_trader.backtest.engine import BacktestEngine
@@ -9,7 +8,6 @@ from nautilus_trader.config import BacktestEngineConfig
 from nautilus_trader.config import LoggingConfig
 from nautilus_trader.model.currencies import USDT
 from nautilus_trader.model.data import Bar
-from nautilus_trader.model.data import BarType
 from nautilus_trader.model.enums import AccountType
 from nautilus_trader.model.enums import OmsType
 from nautilus_trader.model.identifiers import Venue
@@ -23,6 +21,11 @@ from probabilistic_trading.examples.demo_hmm.demo_hmm_strategy import DemoHMMStr
 
 
 def main():
+    # 設定回測變數
+    backtest_time_start = "2024-01-01"
+    backtest_time_end = "2024-01-31"
+    backtest_timeframe = "15-MINUTE"
+
     # 設置回測引擎
     engine_config = BacktestEngineConfig(
         logging=LoggingConfig(
@@ -39,7 +42,7 @@ def main():
         account_type=AccountType.MARGIN,
         starting_balances=[Money(1_000, USDT)],
         base_currency=USDT,
-        default_leverage=Decimal("20"),
+        default_leverage=Decimal("2"),
     )
 
     # 加載您的測試數據
@@ -55,12 +58,14 @@ def main():
     engine.add_instrument(instrument)
 
     # Now load bar data
-    bar_type = f"{instrument.id}-1-HOUR-LAST-EXTERNAL"
+    bar_type = f"{instrument.id}-{backtest_timeframe}-LAST-EXTERNAL"
     print(f"Loading bars for {bar_type}")
 
     bars = catalog.query(
         data_cls=Bar,
         bar_types=[bar_type],
+        start=backtest_time_start,
+        end=backtest_time_end,
     )
 
     if not bars:
@@ -70,21 +75,21 @@ def main():
     engine.add_data(bars)
 
     # 添加Actor和Strategy
-    actor = DemoHMMActor(bar_type=BarType.from_str(bar_type))
+    actor = DemoHMMActor(bar_type=bar_type)
     engine.add_actor(actor)
 
     strategy = DemoHMMStrategy(
         config=DemoHMMStrategyConfig(
             instrument_id=instrument.id,
-            bar_type=BarType.from_str(bar_type),
-            position_size=Quantity.from_str("700"),
-            prob_threshold=0.8,
+            bar_type=bar_type,
+            position_size=Quantity.from_str("1600"),
+            prob_threshold=0.75,
         )
     )
     engine.add_strategy(strategy)
 
     input("Press Enter to start backtest...")
-    sleep(1)
+
     # 運行回測
     engine.run()
 

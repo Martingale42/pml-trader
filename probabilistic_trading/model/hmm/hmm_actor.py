@@ -38,9 +38,9 @@ class HMMActorConfig(ActorConfig):
     """
 
     instrument_id: InstrumentId
-    n_states: int = 4  # HMM狀態數
-    min_training_bars: int = 72  # 最小訓練數據量(3天的5分鐘K線)
-    update_interval: int = 3  # 更新間隔(天)
+    bar_type: str
+    n_states: int = 2  # HMM狀態數
+    min_training_bars: int = 100  # 最小訓練數據量(狀態數 * 維度 * 10)
     pca_components: int = 5  # PCA降維後的特徵數
     verbose: bool = False  # 是否輸出詳細信息
 
@@ -56,9 +56,8 @@ class HMMActor(Actor):
 
         # 設定
         self.instrument_id = config.instrument_id
-        self.bar_type = BarType.from_str(f"{config.instrument_id}-15-MINUTE-LAST-EXTERNAL")
+        self.bar_type = BarType.from_str(config.bar_type)
         self.min_training_bars = config.min_training_bars
-        # self.update_interval = config.update_interval
 
         # 初始化模型和特徵處理器
         self.model = HMMModel(
@@ -112,7 +111,7 @@ class HMMActor(Actor):
             features = self._calculate_features()
             # 提取特徵
             pca_features = self._extract_pca_features(features)
-            self.log.info(f"Latest feature: {pca_features[-1]}")
+            self.log.info(f"Latest feature: {pca_features[-1]}")  # NEW: 最新的bar
             self.log.info(f"Feature has {pca_features.shape} shape")
             # self.log.info(f"Processing {len(pca_features)} bars")
             train_pca_features = pca_features.reshape(1, -1, self.n_features)
@@ -129,15 +128,13 @@ class HMMActor(Actor):
 
             # 進行預測
             # self.log.info("Predicting state")
-            self.log.info(f"Predicting features has {pca_features.shape} shape")
-            self.log.info(f"Last predicting features: {pca_features[-1]}")
-            # states = self.model.predict(pca_features[-1])  # 只取最後一步會出錯
-            # probas = self.model.predict_proba(pca_features[-1])[-1]  # 只取最後一步會出錯
+            # self.log.info(f"Predicting features has {pca_features.shape} shape")
+            # self.log.info(f"Last predicting features: {pca_features[-1]}")
+
+            # 最後一步的狀態機率是更新在[0] NEW: 將bar逆序之後, 最後一個bar是最新的bar
             states = self.model.predict(pca_features)  # 取全部時間步的狀態
-            probas = self.model.predict_proba(pca_features)[0]  # 最後一步的狀態機率是更新在[0]
-            # self.log.info(f"Predicted states: {states}")
-            # self.log.info(f"Predicted probas: {probas}")
-            state = states[0]  # 最後一步的狀態是更新在[0]
+            probas = self.model.predict_proba(pca_features)[-1]
+            state = states[-1]
             state_proba = probas[state]
 
             # 發布狀態數據
@@ -239,8 +236,9 @@ class HMMActor(Actor):
                 }
                 for bar in bars
             ]
-        )
-
+        ).iloc[::-1]
+        # 因為最新的 bar 被存在 `bars[0]`, 我們在這使用`.iloc[::-1]`將最新的 bar 放在最後
+        # self.log.info(f"Bar head: {df_bar.tail()}")
         # 計算基礎特徵
         df_bar["price_range"] = df_bar["high"] - df_bar["low"]
 

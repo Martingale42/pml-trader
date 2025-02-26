@@ -20,17 +20,17 @@ class DemoHMMActor(Actor):
 
     def __init__(
         self,
-        bar_type: BarType,
-        min_bars: int = 100,  # 最小需要的K線數量
+        bar_type: str,
+        min_bars: int = 100,  # states x dimensions x 10 = 2 x 5 x 10 = 100
     ):
         super().__init__()
-        self.bar_type = bar_type
+        self.bar_type = BarType.from_str(bar_type)
         self.min_bars = min_bars
 
         # 初始化HMM模型
         self.model = HMMModel(
             config=HMMConfig(
-                n_states=3,  # 使用3個狀態的簡單模型
+                n_states=2,  # 使用3個狀態的簡單模型
                 emission_dim=5,  # OHLCV 5個特徵
                 emission_type="gaussian",
             )
@@ -61,7 +61,8 @@ class DemoHMMActor(Actor):
                     [float(b.open), float(b.high), float(b.low), float(b.close), float(b.volume)]
                     for b in bars
                 ]
-            )
+            )[::-1]  # 反轉數據
+            # features = features[::-1]
             self.log.info(f"Latest feature: {features[-1]}")
             self.log.info(f"Feature has {features.shape} shape")
             self.log.info(f"Processing {len(features)} bars")
@@ -81,9 +82,9 @@ class DemoHMMActor(Actor):
             self.log.info("Predicting state")
             self.log.info(f"Predicting features has {features.shape} shape")
             states = self.model.predict(features)  # 取全部時間步的狀態
-            probas = self.model.predict_proba(features)[0]  # 取最新狀態的概率矩陣
+            probas = self.model.predict_proba(features)[-1]  # 取最新狀態的概率矩陣
 
-            state = states[0]  # 取最新狀態是在[0]
+            state = states[-1]  # 取最新狀態
             state_proba = probas[state]  # 取最新狀態的機率
 
             # 發布狀態數據
