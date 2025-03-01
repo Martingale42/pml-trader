@@ -4,8 +4,8 @@ from nautilus_trader.model.data import Bar
 from nautilus_trader.persistence.catalog import ParquetDataCatalog
 
 
-def check_catalog():
-    catalog = ParquetDataCatalog(Path("data/catalog"))
+def check_catalog(catalog_path: str = "data/binance/catalog"):
+    catalog = ParquetDataCatalog(Path(catalog_path))
 
     print("Checking catalog contents...")
     instruments = catalog.instruments()

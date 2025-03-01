@@ -1,25 +1,7 @@
-# ---
-# jupyter:
-#   jupytext:
-#     cell_metadata_filter: -all
-#     custom_cell_magics: kql
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.11.2
-#   kernelspec:
-#     display_name: .venv
-#     language: python
-#     name: python3
-# ---
-
-# %%
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
-# %%
 from nautilus_trader.backtest.engine import BacktestEngine
 from nautilus_trader.config import BacktestEngineConfig
 from nautilus_trader.config import LoggingConfig
@@ -32,28 +14,33 @@ from nautilus_trader.model.identifiers import Venue
 from nautilus_trader.model.objects import Money
 from nautilus_trader.persistence.catalog import ParquetDataCatalog
 
-# %%
 from probabilistic_trading.model.hmm.hmm_actor import HMMActor
 from probabilistic_trading.model.hmm.hmm_actor import HMMActorConfig
 from probabilistic_trading.strategy.hmm_strategy import HMMStrategy
 from probabilistic_trading.strategy.hmm_strategy import HMMStrategyConfig
 
 
-# %%
 def main():
     # 設定回測變數
-    backtest_time_start = "2024-01-01"
-    backtest_time_end = "2024-01-31"
+    backtest_time_start = "20240101"
+    backtest_time_end = "20240131"
     backtest_timerange = f"{backtest_time_start}__{backtest_time_end}"
     backtest_timeframe = "15-MINUTE"
-    current_time = datetime.now().strftime("%Y-%m-%d__%H_%M_%S")
+    trader_id = "BACKTESTER_ENGINE_001"
+    backtest_results_dir = "./backtest_results/"
+
+    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Create output directory
+    output_dir = Path(backtest_results_dir + f"{trader_id}_{current_time}")
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize backtest engine
     engine_config = BacktestEngineConfig(
-        trader_id=TraderId("BACKTEST_TRADER-001"),
+        trader_id=TraderId(trader_id),
         logging=LoggingConfig(
             log_level="INFO",  # Changed to INFO for less verbose output
-            log_file_name=f"BACKTEST_TRADER-001_{current_time}_{backtest_timeframe}_{backtest_timerange}.log",
+            log_directory=str(output_dir),
+            log_file_name=f"{trader_id}-{current_time}-{backtest_timeframe}-{backtest_timerange}.log",
             log_level_file="DEBUG",
             log_file_format="json",
             log_component_levels={"Portfolio": "DEBUG"},  # Add component-specific logging
@@ -67,13 +54,13 @@ def main():
         venue=BINANCE,
         oms_type=OmsType.NETTING,
         account_type=AccountType.MARGIN,
-        starting_balances=[Money(1_000, USDT)],
+        starting_balances=[Money(75, USDT)],
         base_currency=USDT,
         default_leverage=Decimal("5.0"),
     )
 
     # Load data from your catalog
-    catalog = ParquetDataCatalog(Path("data/catalog"))
+    catalog = ParquetDataCatalog(Path("data/binance/catalog"))
 
     # First load instruments from catalog
     instruments = catalog.instruments()
@@ -104,8 +91,8 @@ def main():
     strategy_config = HMMStrategyConfig(
         instrument_id=instrument.id,
         bar_type=bar_type,
-        prob_threshold=0.75,
-        position_size=Decimal("4000"),
+        prob_threshold=0.85,
+        position_size=Decimal("200"),
     )
     strategy = HMMStrategy(config=strategy_config)
 
@@ -115,6 +102,9 @@ def main():
         n_states=2,
         min_training_bars=672,
         pca_components=5,
+        retrain_interval=168,  # 7 * 24 hours
+        retrain_window_size=672,
+        incremental_training=True,
     )
     hmm_actor = HMMActor(config=hmm_actor_config)
 
@@ -135,11 +125,8 @@ def main():
     print(engine.trader.generate_positions_report())
 
 
-# %%
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
         print(f"Backtest failed: {e!s}")
-
-# %%

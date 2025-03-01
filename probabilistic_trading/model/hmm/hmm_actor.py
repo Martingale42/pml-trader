@@ -5,6 +5,7 @@ Hidden Markov Model actor implementation.
 import numpy as np
 import pandas as pd
 from nautilus_trader.common.actor import Actor
+from nautilus_trader.common.component import TimeEvent
 from nautilus_trader.config import ActorConfig
 from nautilus_trader.model.data import Bar
 from nautilus_trader.model.data import BarType
@@ -42,7 +43,11 @@ class HMMActorConfig(ActorConfig):
     n_states: int = 2  # HMM狀態數
     min_training_bars: int = 100  # 最小訓練數據量(狀態數 * 維度 * 10)
     pca_components: int = 5  # PCA降維後的特徵數
-    verbose: bool = False  # 是否輸出詳細信息
+
+    # 新增重新訓練配置
+    retrain_interval: int = 7 * 24  # 每多少小時重新訓練一次
+    retrain_window_size: int = 672  # 重新訓練使用的資料量
+    incremental_training: bool = False  # 是否採用增量訓練而非完全重新訓練
 
 
 class HMMActor(Actor):
@@ -73,9 +78,19 @@ class HMMActor(Actor):
         self.n_features: int = 0
         self.is_trained = False
 
+        # 初始化訓練追蹤
+        self.training_count = 0
+
     def on_start(self):
         """Actor啟動時被呼叫。訂閱所需的數據流。"""
         self.subscribe_bars(self.bar_type)
+        # 初始化重新訓練
+        self.clock.set_timer(
+            name="retrain_timer",
+            start_time=self.clock.utc_now(),
+            interval=pd.Timedelta(hours=self.config.retrain_interval),
+            callback=self.on_event,
+        )
 
     def on_stop(self):
         """Actor停止時被呼叫。"""
@@ -84,6 +99,17 @@ class HMMActor(Actor):
     def on_reset(self):
         """重置Actor狀態。"""
         return
+
+    def on_event(self, event):
+        """處理各種事件, 包括計時器事件。"""
+        if (
+            isinstance(event, TimeEvent)
+            and event.name == "retrain_timer"
+            and self.training_count > 1
+        ):
+            self.log.info("重新訓練定時器觸發")
+            # 啟動異步重新訓練
+            self.retrain_model()
 
     def on_bar(self, bar: Bar) -> None:
         """
@@ -125,6 +151,7 @@ class HMMActor(Actor):
                 )
                 self.log.info("Initial training completed")
                 self.is_trained = True
+                self.training_count += 1
 
             # 進行預測
             # self.log.info("Predicting state")
@@ -200,7 +227,7 @@ class HMMActor(Actor):
             explained_variance_ratio = self.pca.explained_variance_ratio_
             cumulative_variance_ratio = np.cumsum(explained_variance_ratio)
             self.log.debug(f"PCA explained variance ratio: {cumulative_variance_ratio[-1]:.4f}")
-            self.n_features = int(len(features_pca[0]))
+            self.n_features = int(len(features_pca[-1]))
             return features_pca
 
         except Exception as e:
@@ -208,7 +235,7 @@ class HMMActor(Actor):
             self.log.exception("Stack trace:")
             return None
 
-    def _calculate_features(self) -> pd.DataFrame:
+    def _calculate_features(self, windows: int = -1) -> pd.DataFrame:
         """
         從K線數據提取技術特徵。
 
@@ -221,7 +248,7 @@ class HMMActor(Actor):
         if self.cache.bar_count(self.bar_type) < self.min_training_bars:
             return pd.DataFrame()
 
-        bars = self.cache.bars(self.bar_type)
+        bars = self.cache.bars(self.bar_type)[:windows]
 
         # 轉換K線數據為DataFrame
         df_bar = pd.DataFrame(
@@ -296,24 +323,102 @@ class HMMActor(Actor):
         ]
         return df_bar[feature_columns]
 
-    def on_save(self) -> dict:
-        """
-        保存Actor狀態。
+    def retrain_model(self):
+        """重新訓練模型"""
+        try:
+            # 檢查是否有足夠的新數據
+            if self.cache.bar_count(self.bar_type) < self.config.retrain_window_size:
+                self.log.warning(
+                    f"數據不足, 無法重新訓練. 目前: {self.cache.bar_count(self.bar_type)}, \
+                        需要: {self.config.retrain_window_size}"
+                )
+                return
 
-        Returns
-        -------
-        dict
-            包含Actor狀態的字典
-        """
-        return
+            self.log.info("開始重新訓練 HMM 模型...")
+            # 提取特徵
+            features = self._calculate_features(windows=self.config.retrain_window_size)
+            pca_features = self._extract_pca_features(features)
+            if pca_features is None:
+                self.log.error("特徵提取失敗, 無法重新訓練")
+                return
+            # 重新整形數據
+            train_pca_features = pca_features.reshape(1, -1, self.n_features)
+            # 配置訓練參數, 可能根據已訓練的次數動態調整
+            train_config = TrainingConfig(
+                method="em",
+                num_epochs=max(20, 50 - self.training_count * 5),  # 隨著訓練次數增加, 減少迭代次數
+            )
+            if self.config.incremental_training and self.is_trained:
+                # 增量訓練
+                smoothing_factor = 0.3  # 可調整的參數
+                self.model.incremental_fit(
+                    train_pca_features,
+                    training_config=train_config,
+                    smoothing_factor=smoothing_factor,
+                )
+                self.log.info(f"HMM 模型增量訓練完成, 使用平滑因子 {smoothing_factor}。")
+            else:
+                # 完全重新訓練
+                self.model.fit(train_pca_features, training_config=train_config)
+                self.log.info("HMM 模型完全重新訓練完成。")
 
-    def on_load(self, state: dict) -> None:
-        """
-        加載Actor狀態。
+            # 更新訓練記錄
+            self.training_count += 1
 
-        Parameters
-        ----------
-        state : dict
-            包含Actor狀態的字典
-        """
-        return
+            self.log.info(f"HMM 模型重新訓練完成。這是第 {self.training_count} 次訓練。")
+
+        except Exception as e:
+            self.log.error(f"重新訓練過程中發生錯誤: {e!s}")
+            self.log.exception("Stack trace:")
+
+    def on_save(self) -> dict[str, bytes]:
+        """保存Actor狀態。"""
+        try:
+            if not self.is_trained:
+                return {}
+
+            import pickle
+
+            model_state = pickle.dumps(
+                {
+                    "model_params": self.model._params,
+                    "model_props": self.model._props,
+                    "is_trained": self.is_trained,
+                    "training_count": self.training_count,
+                    "last_train_time": self.last_train_time,
+                    "scaler": self.scaler,
+                    "pca": self.pca,
+                    "n_features": self.n_features,
+                }
+            )
+
+            return {"model_state": model_state}
+
+        except Exception as e:
+            self.log.error(f"保存模型時發生錯誤: {e!s}")
+            return {}
+
+    def on_load(self, state: dict[str, bytes]) -> None:
+        """加載Actor狀態。"""
+        try:
+            if "model_state" not in state:
+                self.log.warning("沒有找到模型狀態, 將重新訓練")
+                return
+
+            import pickle
+
+            model_state = pickle.loads(state["model_state"])
+
+            self.model._params = model_state["model_params"]
+            self.model._props = model_state["model_props"]
+            self.is_trained = model_state["is_trained"]
+            self.training_count = model_state["training_count"]
+            self.last_train_time = model_state["last_train_time"]
+            self.scaler = model_state["scaler"]
+            self.pca = model_state["pca"]
+            self.n_features = model_state["n_features"]
+
+            self.log.info("成功加載模型狀態")
+
+        except Exception as e:
+            self.log.error(f"加載模型狀態時發生錯誤: {e!s}")

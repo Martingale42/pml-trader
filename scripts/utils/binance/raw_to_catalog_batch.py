@@ -19,7 +19,7 @@ from nautilus_trader.persistence.wranglers import BarDataWrangler
 
 
 # 加載.env文件中的環境變量
-env_path = Path(__file__).parent / ".env"
+env_path = Path(__file__).parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
 
 
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     # 示例使用
     RAW_DATA_PATH = "data/binance/futures"
     PROCESSED_DATA_PATH = "data/binance/futures_processed"
-    CATALOG_PATH = "data/catalog"
+    CATALOG_PATH = "data/binance/catalog"
 
     process_raw_data(
         raw_data_path=RAW_DATA_PATH,

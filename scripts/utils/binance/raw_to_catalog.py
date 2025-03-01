@@ -19,7 +19,7 @@ from nautilus_trader.persistence.wranglers import BarDataWrangler
 
 
 # 加載.env文件中的環境變量
-env_path = Path(__file__).parent / ".env"
+env_path = Path(__file__).parents[3] / ".env"
 load_dotenv(dotenv_path=env_path)
 
 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         btcusdt_perp_bar = wrangler.process(btcusdt_perp)
 
         # 指定CATALOG_PATH
-        CATALOG_PATH = Path("data/catalog")
+        CATALOG_PATH = Path("data/binance/catalog")
 
         # 如果CATALOG_PATH存在, 將其刪除並重建
         if CATALOG_PATH.exists():
