@@ -23,7 +23,7 @@ def main():
     backtest_time_end = "20240131"
     backtest_timerange = f"{backtest_time_start}_{backtest_time_end}"
     backtest_timeframe = "15-MINUTE"
-    trader_id = "BACKTESTER_NODE_002"
+    trader_id = "BACKTESTER-NODE-002"
     backtest_results_dir = "./backtest_results/"
 
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
