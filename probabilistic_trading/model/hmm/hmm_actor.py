@@ -4,6 +4,7 @@ Hidden Markov Model actor implementation.
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from nautilus_trader.common.actor import Actor
 from nautilus_trader.common.component import TimeEvent
 from nautilus_trader.config import ActorConfig
@@ -74,8 +75,6 @@ class HMMActor(Actor):
         )
         self.scaler = StandardScaler()
         self.pca = PCA(n_components=config.pca_components)
-        # 特徵維度
-        self.n_features: int = 0
         self.is_trained = False
 
         # 初始化訓練追蹤
@@ -87,7 +86,7 @@ class HMMActor(Actor):
         # 初始化重新訓練
         self.clock.set_timer(
             name="retrain_timer",
-            start_time=self.clock.utc_now(),
+            start_time=self.clock.utc_now() + pd.Timedelta(hours=self.config.retrain_interval),
             interval=pd.Timedelta(hours=self.config.retrain_interval),
             callback=self.on_event,
         )
@@ -105,7 +104,7 @@ class HMMActor(Actor):
         if (
             isinstance(event, TimeEvent)
             and event.name == "retrain_timer"
-            and self.training_count > 1
+            and self.training_count >= 1
         ):
             self.log.info("重新訓練定時器觸發")
             # 啟動異步重新訓練
@@ -132,22 +131,20 @@ class HMMActor(Actor):
             )
             return
         try:
-            self.log.info(f"current bars: {self.cache.bar_count(self.bar_type)}")
             # 檢查數據量
-            features = self._calculate_features()
+            self.log.info(f"current bars: {self.cache.bar_count(self.bar_type)}")
             # 提取特徵
-            pca_features = self._extract_pca_features(features)
-            self.log.info(f"Latest feature: {pca_features[-1]}")  # NEW: 最新的bar
-            self.log.info(f"Feature has {pca_features.shape} shape")
-            # self.log.info(f"Processing {len(pca_features)} bars")
-            train_pca_features = pca_features.reshape(1, -1, self.n_features)
-            # self.log.info(f"Reshaped train feature has {train_pca_features.shape} shape")
+            features_pca = self._extract_pca_features(self._calculate_features())
+            self.log.info(f"Latest feature: {features_pca[-1]}")  # NEW: 最新的bar
+            # self.log.info(f"Feature has {features_pca.shape} shape")
+            # self.log.info(f"Processing {len(features_pca)} bars")
 
             if not self.is_trained:
                 # 首次訓練
                 self.log.info("Initial training of HMM model...")
                 self.model.fit(
-                    train_pca_features, training_config=TrainingConfig(method="em", num_epochs=50)
+                    features_pca.reshape(1, -1, self.config.pca_components),
+                    training_config=TrainingConfig(method="em", num_epochs=50),
                 )
                 self.log.info("Initial training completed")
                 self.is_trained = True
@@ -155,12 +152,11 @@ class HMMActor(Actor):
 
             # 進行預測
             # self.log.info("Predicting state")
-            # self.log.info(f"Predicting features has {pca_features.shape} shape")
-            # self.log.info(f"Last predicting features: {pca_features[-1]}")
+            # self.log.info(f"Predicting features has {features_pca.shape} shape")
+            # self.log.info(f"Last predicting features: {features_pca[-1]}")
 
-            # 最後一步的狀態機率是更新在[0] NEW: 將bar逆序之後, 最後一個bar是最新的bar
-            states = self.model.predict(pca_features)  # 取全部時間步的狀態
-            probas = self.model.predict_proba(pca_features)[-1]
+            states = self.model.predict(features_pca)  # 取全部時間步的狀態
+            probas = self.model.predict_proba(features_pca)[-1]  # 取最後一個時間步的狀態機率
             state = states[-1]
             state_proba = probas[state]
 
@@ -172,20 +168,15 @@ class HMMActor(Actor):
                 ts_init=bar.ts_init,
                 ts_event=bar.ts_event,
             )
-            self.log.info(f"Publishing state: {state_data.state}, proba: {state_data.state_proba}")
+            # self.log.info(f"Publishing state: {state_data.state}, proba: {state_data.state_proba}")
             self.publish_data(DataType(HMMStateData), state_data)
 
         except Exception as e:
             self.log.error("Error processing bar", e)
 
-    def _extract_pca_features(self, features: pd.DataFrame) -> np.ndarray | None:
+    def _extract_pca_features(self, features: np.ndarray) -> np.ndarray | None:
         """
         提取並轉換特徵。
-
-        1. 計算原始技術指標特徵
-        2. 數據清理和驗證
-        3. 標準化
-        4. PCA降維
 
         Returns
         -------
@@ -193,21 +184,16 @@ class HMMActor(Actor):
             降維後的特徵矩陣, 如果處理失敗則返回None
         """
         try:
-            # 計算原始特徵
-            if features.empty:
-                self.log.warning("No features calculated")
-                return None
-
             # 檢查無效值
-            if features.isna().any().any():
+            if np.isnan(features).any():
                 self.log.warning("Features contain NaN values")
                 return None
 
-            if np.isinf(features.to_numpy()).any().any():
+            if np.isinf(features).any():
                 self.log.warning("Features contain infinite values")
                 return None
 
-            # 標準化
+            # 標準化 (使用scikit-learn)
             features_scaled = self.scaler.fit_transform(features)
 
             # 檢查標準化後的數據
@@ -215,7 +201,7 @@ class HMMActor(Actor):
                 self.log.warning("Scaling produced invalid values")
                 return None
 
-            # PCA降維
+            # PCA降維 (仍使用sklearn)
             features_pca = self.pca.fit_transform(features_scaled)
 
             # 驗證PCA結果
@@ -224,10 +210,9 @@ class HMMActor(Actor):
                 return None
 
             # 記錄解釋方差比
-            explained_variance_ratio = self.pca.explained_variance_ratio_
+            explained_variance_ratio = np.array(self.pca.explained_variance_ratio_)
             cumulative_variance_ratio = np.cumsum(explained_variance_ratio)
-            self.log.debug(f"PCA explained variance ratio: {cumulative_variance_ratio[-1]:.4f}")
-            self.n_features = int(len(features_pca[-1]))
+            self.log.info(f"PCA explained variance ratio: {cumulative_variance_ratio[-1]:.4f}")
             return features_pca
 
         except Exception as e:
@@ -235,93 +220,74 @@ class HMMActor(Actor):
             self.log.exception("Stack trace:")
             return None
 
-    def _calculate_features(self, windows: int = -1) -> pd.DataFrame:
+    def _calculate_features(self, windows: int = -1) -> np.ndarray:
         """
-        從K線數據提取技術特徵。
+        從K線數據提取技術特徵。使用JAX加速計算。
 
         Returns
         -------
-        pd.DataFrame
-            特徵DataFrame
+        np.ndarray
+            包含所有特徵的數組
         """
         # 確保有足夠數據
         if self.cache.bar_count(self.bar_type) < self.min_training_bars:
-            return pd.DataFrame()
+            return pl.DataFrame()
 
         bars = self.cache.bars(self.bar_type)[:windows]
 
-        # 轉換K線數據為DataFrame
-        df_bar = pd.DataFrame(
+        # Extract column-wise data using NumPy (faster than list comprehension)
+        open_ = np.array([bar.open for bar in bars], dtype=np.float64)
+        high = np.array([bar.high for bar in bars], dtype=np.float64)
+        low = np.array([bar.low for bar in bars], dtype=np.float64)
+        close = np.array([bar.close for bar in bars], dtype=np.float64)
+        volume = np.array([bar.volume for bar in bars], dtype=np.float64)
+
+        # Create Polars DataFrame from NumPy arrays
+        bars_df = pl.DataFrame(
+            {"open": open_, "high": high, "low": low, "close": close, "volume": volume}
+        ).reverse()
+        # self.log.info(f"Bar tail: {bars_df.tail(1)}")
+
+        features_ = []
+        for i in range(1, 72, 14):
+            features_.extend(
+                [
+                    (
+                        (
+                            ((pl.col("close") + pl.col("high") + pl.col("low")) / 3)
+                            * pl.col("volume")
+                        ).rolling_sum(i)
+                        / pl.col("volume").rolling_sum(i)
+                    )
+                    .fill_null(1e-8)
+                    .alias(f"vwap_{i}"),
+                    (pl.col("close").log() - pl.col("close").shift(i).log())
+                    .fill_null(1e-8)
+                    .alias(f"log_returns_{i}"),
+                    pl.col("volume").rolling_mean(i).fill_null(1e-8).alias(f"volume_{i}_ma"),
+                    (pl.col("volume") - pl.col("volume").shift(i))
+                    .fill_null(1e-8)
+                    .alias(f"volume_{i}_momentum"),
+                    (pl.col("close") / pl.col("close").shift(i))
+                    .rolling_std(i)
+                    .fill_null(1e-8)
+                    .alias(f"volatility_{i}"),
+                ]
+            )
+
+        # Apply all feature calculations at once
+        bars_df = bars_df.with_columns(features_)
+
+        # 選擇用於建模的特徵 (Faster filtering)
+        bars_df = bars_df.select(
             [
-                {
-                    "open": float(bar.open),
-                    "high": float(bar.high),
-                    "low": float(bar.low),
-                    "close": float(bar.close),
-                    "volume": float(bar.volume),
-                    "ts_event": bar.ts_event,
-                }
-                for bar in bars
+                col
+                for col in bars_df.columns
+                if col not in ["ts_event", "open", "high", "low", "close", "volume"]
             ]
-        ).iloc[::-1]
-        # 因為最新的 bar 被存在 `bars[0]`, 我們在這使用`.iloc[::-1]`將最新的 bar 放在最後
-        # self.log.info(f"Bar head: {df_bar.tail()}")
-        # 計算基礎特徵
-        df_bar["price_range"] = df_bar["high"] - df_bar["low"]
+        )
 
-        # 計算價量特徵, 包含lags
-        close_series = df_bar["close"].to_numpy()
-        volume_series = df_bar["volume"].to_numpy()
-
-        for i in range(1, 72, 24):
-            # 使用numpy計算returns和其他特徵
-            returns = np.zeros_like(close_series)
-            returns[i:] = (close_series[i:] - close_series[:-i]) / close_series[:-i]
-            df_bar[f"returns_{i}"] = returns
-
-            # 計算log returns
-            log_returns = np.zeros_like(close_series)
-            with np.errstate(divide="ignore"):
-                log_returns[i:] = np.log(close_series[i:]) - np.log(close_series[:-i])
-            df_bar[f"log_returns_{i}"] = log_returns
-
-            # 計算其他特徵
-            df_bar[f"log_returns_category_{i}"] = np.sign(log_returns)
-
-            # 計算波動率 - 使用numpy的rolling window
-            volatility = np.zeros_like(returns)
-            for j in range(i, len(returns)):
-                window = returns[max(0, j - i) : j]
-                volatility[j] = np.nanstd(window) if len(window) > 0 else 0
-            df_bar[f"volatility_{i}"] = volatility
-
-            # 計算成交量移動平均 - 使用numpy的rolling window
-            volume_ma = np.zeros_like(volume_series)
-            for j in range(i, len(volume_series)):
-                window = volume_series[max(0, j - i) : j]
-                volume_ma[j] = np.nanmean(window) if len(window) > 0 else 0
-            df_bar[f"volume_ma_{i}"] = volume_ma
-
-            # 計算momentum
-            momentum = np.zeros_like(close_series)
-            momentum[i:] = close_series[i:] - close_series[:-i]
-            df_bar[f"momentum_{i}"] = momentum
-
-            # 計算volume momentum
-            volume_momentum = np.zeros_like(volume_series)
-            volume_momentum[i:] = volume_series[i:] - volume_series[:-i]
-            df_bar[f"volume_momentum_{i}"] = volume_momentum
-
-        # 刪除NaN值
-        df_bar = df_bar.dropna()
-
-        # 選擇用於建模的特徵
-        feature_columns = [
-            col
-            for col in df_bar.columns
-            if col not in ["ts_event", "close", "volume", "log_returns_1"]
-        ]
-        return df_bar[feature_columns]
+        return bars_df.to_numpy()
 
     def retrain_model(self):
         """重新訓練模型"""
@@ -329,14 +295,14 @@ class HMMActor(Actor):
             # 檢查是否有足夠的新數據
             if self.cache.bar_count(self.bar_type) < self.config.retrain_window_size:
                 self.log.warning(
-                    f"數據不足, 無法重新訓練. 目前: {self.cache.bar_count(self.bar_type)}, \
-                        需要: {self.config.retrain_window_size}"
+                    f"數據不足, 無法重新訓練. 目前: {self.cache.bar_count(self.bar_type)}, "
+                    f"需要: {self.config.retrain_window_size}"
                 )
                 return
 
             self.log.info("開始重新訓練 HMM 模型...")
             # 提取特徵
-            features = self._calculate_features(windows=self.config.retrain_window_size)
+            features = self._calculate_features()
             pca_features = self._extract_pca_features(features)
             if pca_features is None:
                 self.log.error("特徵提取失敗, 無法重新訓練")
@@ -346,7 +312,7 @@ class HMMActor(Actor):
             # 配置訓練參數, 可能根據已訓練的次數動態調整
             train_config = TrainingConfig(
                 method="em",
-                num_epochs=max(20, 50 - self.training_count * 5),  # 隨著訓練次數增加, 減少迭代次數
+                num_epochs=max(30, 50 - self.training_count * 5),  # 隨著訓練次數增加, 減少迭代次數
             )
             if self.config.incremental_training and self.is_trained:
                 # 增量訓練
@@ -405,18 +371,18 @@ class HMMActor(Actor):
                 self.log.warning("沒有找到模型狀態, 將重新訓練")
                 return
 
-            import pickle
+            # import pickle
 
-            model_state = pickle.loads(state["model_state"])
+            # model_state = pickle.loads(state["model_state"])
 
-            self.model._params = model_state["model_params"]
-            self.model._props = model_state["model_props"]
-            self.is_trained = model_state["is_trained"]
-            self.training_count = model_state["training_count"]
-            self.last_train_time = model_state["last_train_time"]
-            self.scaler = model_state["scaler"]
-            self.pca = model_state["pca"]
-            self.n_features = model_state["n_features"]
+            # self.model._params = model_state["model_params"]
+            # self.model._props = model_state["model_props"]
+            # self.is_trained = model_state["is_trained"]
+            # self.training_count = model_state["training_count"]
+            # self.last_train_time = model_state["last_train_time"]
+            # self.scaler = model_state["scaler"]
+            # self.pca = model_state["pca"]
+            # self.n_features = model_state["n_features"]
 
             self.log.info("成功加載模型狀態")
 

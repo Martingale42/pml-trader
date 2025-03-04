@@ -1,7 +1,28 @@
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     custom_cell_magics: kql
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.11.2
+#   kernelspec:
+#     display_name: .venv
+#     language: python
+#     name: python3
+# ---
+
+# %%
+# %reset -f
+
+# %%
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
+# %%
 from nautilus_trader.backtest.node import BacktestNode
 from nautilus_trader.config import BacktestDataConfig
 from nautilus_trader.config import BacktestEngineConfig
@@ -17,10 +38,24 @@ from nautilus_trader.model.identifiers import Venue
 from nautilus_trader.persistence.catalog import ParquetDataCatalog
 
 
+# %%
+# catalog = ParquetDataCatalog(Path("../../data/binance/catalog"))
+
+# # 載入instruments
+# instruments = catalog.instruments()
+# if not instruments:
+#     raise RuntimeError("No instruments found in catalog")
+# print(f"Loaded {len(instruments)} instruments")
+# print(instruments[7])
+# for instrument in instruments:
+#     print(instrument)
+
+
+# %%
 def main():
     # 設定回測變數
-    backtest_time_start = "20240101"
-    backtest_time_end = "20240131"
+    backtest_time_start = "20231201"
+    backtest_time_end = "20241031"
     backtest_timerange = f"{backtest_time_start}_{backtest_time_end}"
     backtest_timeframe = "15-MINUTE"
     trader_id = "BACKTESTER-NODE-002"
@@ -31,13 +66,13 @@ def main():
     output_dir = Path(backtest_results_dir + f"{trader_id}_{current_time}")
     output_dir.mkdir(parents=True, exist_ok=True)
     # 初始化data catalog
-    catalog = ParquetDataCatalog(Path("data/binance/catalog"))
+    catalog = ParquetDataCatalog(Path("../../data/binance/catalog"))
 
     # 載入instruments
     instruments = catalog.instruments()
     if not instruments:
         raise RuntimeError("No instruments found in catalog")
-    instrument = instruments[0]
+    instrument = instruments[7]
 
     bar_type = f"{instrument.id}-{backtest_timeframe}-LAST-EXTERNAL"
 
@@ -48,7 +83,7 @@ def main():
             name="BINANCE",
             oms_type="NETTING",
             account_type="MARGIN",
-            starting_balances=["75 USDT"],
+            starting_balances=["600 USDT"],
             base_currency="USDT",
             default_leverage=Decimal("5.0"),
         )
@@ -73,8 +108,8 @@ def main():
         config={
             "instrument_id": instrument.id,
             "bar_type": BarType.from_str(bar_type),
-            "prob_threshold": 0.85,
-            "position_size": Decimal("200.0"),
+            "prob_threshold": 0.95,
+            "position_size": Decimal("2400.0"),
         },
     )
 
@@ -85,12 +120,12 @@ def main():
         config={
             "instrument_id": instrument.id,
             "bar_type": BarType.from_str(bar_type),
-            "n_states": 2,
-            "min_training_bars": 672,
-            "pca_components": 5,
-            "retrain_interval": 168,
-            "retrain_window_size": 672,
-            "incremental_training": True,
+            "n_states": 3,
+            "min_training_bars": 5000,  # 7 days = 672 15-minute bars
+            "pca_components": 6,
+            "retrain_interval": 5000,  # 7 days = 168 15-minute bars
+            "retrain_window_size": 10000,  # 28 days = 672 15-minute bars
+            "incremental_training": False,  # Incremental training has not been fixed yet.
         },
     )
 
@@ -111,7 +146,7 @@ def main():
         ),
         data=data_configs,
         venues=venue_configs,
-        chunk_size=672,
+        chunk_size=5000,
     )
 
     # 創建和執行 BacktestNode
@@ -154,8 +189,11 @@ def main():
     print(positions_report)
 
 
+# %%
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
         print(f"Backtest failed: {e!s}")
+
+# %%

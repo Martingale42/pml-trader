@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 
+import jax
 import jax.numpy as jnp
 import jax.random as jr
 import optax
@@ -8,6 +9,7 @@ from dynamax.hidden_markov_model import DiagonalGaussianHMM
 from dynamax.hidden_markov_model import GaussianHMM
 from dynamax.hidden_markov_model import SharedCovarianceGaussianHMM
 from dynamax.hidden_markov_model import SphericalGaussianHMM
+from jax import jit
 from jax import vmap
 
 
@@ -65,6 +67,19 @@ class TrainingConfig:
     num_epochs: int = 100
     batch_size: int | None = None
     learning_rate: float = 1e-2
+
+
+# @partial(jit, static_argnums=(0,), device=jax.devices()[0])
+# def _jitted_predict(model, params, data):
+#     """JIT預編譯的狀態預測函數"""
+#     return model.most_likely_states(params, data)
+
+
+# @partial(jit, static_argnums=(0,), device=jax.devices()[0])
+# def _jitted_predict_proba(model, params, data):
+#     """JIT預編譯的概率預測函數"""
+#     posterior = model.smoother(params, data)
+#     return posterior.smoothed_probs
 
 
 class HMMModel:
@@ -130,102 +145,102 @@ class HMMModel:
         self._is_fitted = True
         return self
 
-    def incremental_fit(
-        self,
-        new_data: jnp.ndarray,
-        training_config: TrainingConfig,
-        smoothing_factor: float = 0.3,
-    ) -> "HMMModel":
-        """
-        增量訓練模型。
+    # def incremental_fit(
+    #     self,
+    #     new_data: jnp.ndarray,
+    #     training_config: TrainingConfig,
+    #     smoothing_factor: float = 0.3,
+    # ) -> "HMMModel":
+    #     """
+    #     增量訓練模型。
 
-        Parameters
-        ----------
-        new_data : jnp.ndarray
-            新的訓練數據
-        training_config : TrainingConfig
-            訓練配置
-        smoothing_factor : float
-            新參數的權重, 範圍[0, 1]。較大的值表示更多地考慮新數據。
+    #     Parameters
+    #     ----------
+    #     new_data : jnp.ndarray
+    #         新的訓練數據
+    #     training_config : TrainingConfig
+    #         訓練配置
+    #     smoothing_factor : float
+    #         新參數的權重, 範圍[0, 1]。較大的值表示更多地考慮新數據。
 
-        Returns
-        -------
-        self : HMMModel
-            訓練後的模型實例
-        """
-        if not self._is_fitted:
-            # 如果模型尚未訓練, 則進行正常訓練
-            return self.fit(new_data, training_config)
+    #     Returns
+    #     -------
+    #     self : HMMModel
+    #         訓練後的模型實例
+    #     """
+    #     if not self._is_fitted:
+    #         # 如果模型尚未訓練, 則進行正常訓練
+    #         return self.fit(new_data, training_config)
 
-        # 保存原始參數
-        original_params = self._params
+    #     # 保存原始參數
+    #     original_params = self._params
 
-        # 使用新數據訓練模型
-        if training_config.method == "em":
-            self._params, _ = self._model.fit_em(
-                self._params,
-                self._props,
-                new_data,
-                num_iters=training_config.num_epochs,
-            )
-        elif training_config.method == "sgd":
-            optimizer = optax.sgd(learning_rate=training_config.learning_rate, momentum=0.95)
-            self._params, _ = self._model.fit_sgd(
-                self._params,
-                self._props,
-                new_data,
-                optimizer=optimizer,
-                batch_size=training_config.batch_size,
-                num_epochs=training_config.num_epochs,
-                key=jr.PRNGKey(self.config.seed),
-            )
+    #     # 使用新數據訓練模型
+    #     if training_config.method == "em":
+    #         self._params, _ = self._model.fit_em(
+    #             self._params,
+    #             self._props,
+    #             new_data,
+    #             num_iters=training_config.num_epochs,
+    #         )
+    #     elif training_config.method == "sgd":
+    #         optimizer = optax.sgd(learning_rate=training_config.learning_rate, momentum=0.95)
+    #         self._params, _ = self._model.fit_sgd(
+    #             self._params,
+    #             self._props,
+    #             new_data,
+    #             optimizer=optimizer,
+    #             batch_size=training_config.batch_size,
+    #             num_epochs=training_config.num_epochs,
+    #             key=jr.PRNGKey(self.config.seed),
+    #         )
 
-        # 將新參數與舊參數加權平均
-        # 注意: 這裡的實現是簡化的, 實際上可能需要更複雜的邏輯來合併參數
-        def blend_params(original, new, factor):
-            """將原始參數和新參數進行加權平均"""
-            return factor * new + (1 - factor) * original
+    #     # 將新參數與舊參數加權平均
+    #     # 注意: 這裡的實現是簡化的, 實際上可能需要更複雜的邏輯來合併參數
+    #     def blend_params(original, new, factor):
+    #         """將原始參數和新參數進行加權平均"""
+    #         return factor * new + (1 - factor) * original
 
-        # 處理轉移矩陣
-        self._params.transitions.transition_matrix = blend_params(
-            original_params.transitions.transition_matrix,
-            self._params.transitions.transition_matrix,
-            smoothing_factor,
-        )
+    #     # 處理轉移矩陣
+    #     self._params.transitions.transition_matrix = blend_params(
+    #         original_params.transitions.transition_matrix,
+    #         self._params.transitions.transition_matrix,
+    #         smoothing_factor,
+    #     )
 
-        # 處理初始概率
-        self._params.initial.probs = blend_params(
-            original_params.initial.probs,
-            self._params.initial.probs,
-            smoothing_factor,
-        )
+    #     # 處理初始概率
+    #     self._params.initial.probs = blend_params(
+    #         original_params.initial.probs,
+    #         self._params.initial.probs,
+    #         smoothing_factor,
+    #     )
 
-        # 處理發射參數 (根據模型類型可能需要不同的處理)
-        if hasattr(self._params.emissions, "means") and hasattr(original_params.emissions, "means"):
-            self._params.emissions.means = blend_params(
-                original_params.emissions.means,
-                self._params.emissions.means,
-                smoothing_factor,
-            )
+    #     # 處理發射參數 (根據模型類型可能需要不同的處理)
+    #     if hasattr(self._params.emissions, "means") and hasattr(original_params.emissions, "means"):
+    #         self._params.emissions.means = blend_params(
+    #             original_params.emissions.means,
+    #             self._params.emissions.means,
+    #             smoothing_factor,
+    #         )
 
-        if hasattr(self._params.emissions, "covs") and hasattr(original_params.emissions, "covs"):
-            self._params.emissions.covs = blend_params(
-                original_params.emissions.covs,
-                self._params.emissions.covs,
-                smoothing_factor,
-            )
+    #     if hasattr(self._params.emissions, "covs") and hasattr(original_params.emissions, "covs"):
+    #         self._params.emissions.covs = blend_params(
+    #             original_params.emissions.covs,
+    #             self._params.emissions.covs,
+    #             smoothing_factor,
+    #         )
 
-        # 如果是對角高斯模型
-        if hasattr(self._params.emissions, "scale_diags") and hasattr(
-            original_params.emissions, "scale_diags"
-        ):
-            self._params.emissions.scale_diags = blend_params(
-                original_params.emissions.scale_diags,
-                self._params.emissions.scale_diags,
-                smoothing_factor,
-            )
+    #     # 如果是對角高斯模型
+    #     if hasattr(self._params.emissions, "scale_diags") and hasattr(
+    #         original_params.emissions, "scale_diags"
+    #     ):
+    #         self._params.emissions.scale_diags = blend_params(
+    #             original_params.emissions.scale_diags,
+    #             self._params.emissions.scale_diags,
+    #             smoothing_factor,
+    #         )
 
-        return self
+    #     return self
 
     def _fit_em(
         self,
@@ -275,9 +290,7 @@ class HMMModel:
             預測的狀態序列
         """
         self._check_is_fitted()
-
-        # return self._model.most_likely_states(self._params, data)[-1]  # 取序列的最後一個結果
-        return self._model.most_likely_states(self._params, data)  # 取一個序列的結果
+        return self._model.most_likely_states(self._params, data)
 
     def predict_proba(self, data: jnp.ndarray) -> jnp.ndarray:
         """
@@ -294,10 +307,8 @@ class HMMModel:
             後驗概率矩陣
         """
         self._check_is_fitted()
-
         posterior = self._model.smoother(self._params, data)
-        # return posterior.smoothed_probs[-1]  # 取序列的最後一個結果
-        return posterior.smoothed_probs  # 取一個序列的結果
+        return posterior.smoothed_probs
 
     def filter(self, data: jnp.ndarray) -> jnp.ndarray:
         """

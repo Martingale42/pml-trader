@@ -7,15 +7,13 @@ requires-python = ">=3.12"
 dependencies = [
     "python-dotenv>=1.0.1",
     "pandas>=2.2.3",
-    "polars>=1.22.0",
+    "polars>=1.24.0",
     "numpy==1.26.4",
     "numba>=0.61.0",
     "nautilus-trader>=1.211.0",
     "dynamax==0.1.5",
-    "jax==0.4.25",
-    "jaxlib==0.4.25",
     "scikit-learn>=1.6.1",
-    "matplotlib>=3.10.0",
+    "matplotlib>=3.10.1",
     "seaborn>=0.13.2",
     "lightweight-charts>=2.1",
     "jupyterlab>=4.3.5",
@@ -24,14 +22,39 @@ dependencies = [
 
 
 [project.optional-dependencies]
+
+gpu = [
+    "jax[cuda12]==0.4.25",
+    "jaxlib[cuda12_pip]==0.4.25",
+]
+
+# 標準 CPU 版本
+cpu = [
+    "jax==0.4.25",
+    "jaxlib==0.4.25",
+]
+
 dev = [
+    "pytest>=8.3.5",
+    "pre-commit>=4.1.0",
+    "pandas-stubs>=2.2.0",
+    "docformatter>=1.7.5",
+    "black>=25.1.0",
+    "ruff>=0.9.9",
+    "mypy>=1.10.0"
+]
+
+# 全部依賴（包括開發工具）
+all = [
+    "jax==0.4.25",  # CPU版本
+    "jaxlib==0.4.25",  # CPU版本
     "pytest>=8.3.4",
     "pre-commit>=4.1.0",
     "pandas-stubs>=2.2.0",
     "docformatter>=1.7.5",
     "black>=25.1.0",
-    "ruff>=0.0.291",
-    "mypy>=1.0.0"
+    "ruff>=0.9.9",
+    "mypy>=1.10.0"
 ]
 
 [tool.black]

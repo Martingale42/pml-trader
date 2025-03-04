@@ -83,7 +83,9 @@ class HMMStrategy(Strategy):
             狀態概率
         """
         # BUY LOGIC
-        if self.current_state == 0 and self.state_proba > self.config.prob_threshold:
+        if (
+            self.current_state == 0 or self.current_state == 1
+        ) and self.state_proba > self.config.prob_threshold:
             if self.portfolio.is_net_long(self.config.instrument_id):
                 return
             if self.portfolio.is_flat(self.config.instrument_id):
@@ -94,7 +96,7 @@ class HMMStrategy(Strategy):
                 self.close_all_positions(self.config.instrument_id)
                 self._long()
         # SELL LOGIC
-        elif self.current_state == 1 and self.state_proba > self.config.prob_threshold:
+        elif self.current_state == 2 and self.state_proba > self.config.prob_threshold:
             if self.portfolio.is_net_short(self.config.instrument_id):
                 return
             if self.portfolio.is_flat(self.config.instrument_id):
