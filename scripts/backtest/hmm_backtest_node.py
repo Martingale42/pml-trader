@@ -66,7 +66,7 @@ def main():
     output_dir = Path(backtest_results_dir + f"{trader_id}_{current_time}")
     output_dir.mkdir(parents=True, exist_ok=True)
     # 初始化data catalog
-    catalog = ParquetDataCatalog(Path("/data/binance/catalog"))
+    catalog = ParquetDataCatalog(Path("./data/binance/catalog"))
 
     # 載入instruments
     instruments = catalog.instruments()
@@ -103,8 +103,8 @@ def main():
 
     # 設定Strategy
     importable_strategy = ImportableStrategyConfig(
-        strategy_path="probabilistic_trading.strategy.hmm_strategy:HMMStrategy",
-        config_path="probabilistic_trading.strategy.hmm_strategy:HMMStrategyConfig",
+        strategy_path="probabilistic_trading.strategies.hmm_strategy:HMMStrategy",
+        config_path="probabilistic_trading.strategies.hmm_strategy:HMMStrategyConfig",
         config={
             "instrument_id": instrument.id,
             "bar_type": BarType.from_str(bar_type),
@@ -115,8 +115,8 @@ def main():
 
     # 設定Actor
     importable_actor = ImportableActorConfig(
-        actor_path="probabilistic_trading.model.hmm.hmm_actor:HMMActor",
-        config_path="probabilistic_trading.model.hmm.hmm_actor:HMMActorConfig",
+        actor_path="probabilistic_trading.models.hmm.hmm_actor:HMMActor",
+        config_path="probabilistic_trading.models.hmm.hmm_actor:HMMActorConfig",
         config={
             "instrument_id": instrument.id,
             "bar_type": BarType.from_str(bar_type),
