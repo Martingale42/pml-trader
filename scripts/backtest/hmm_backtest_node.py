@@ -33,7 +33,6 @@ from nautilus_trader.config import ImportableStrategyConfig
 from nautilus_trader.config import LoggingConfig
 from nautilus_trader.model import TraderId
 from nautilus_trader.model.data import Bar
-from nautilus_trader.model.data import BarType
 from nautilus_trader.model.identifiers import Venue
 from nautilus_trader.persistence.catalog import ParquetDataCatalog
 
@@ -83,7 +82,7 @@ def main():
             name="BINANCE",
             oms_type="NETTING",
             account_type="MARGIN",
-            starting_balances=["600 USDT"],
+            starting_balances=["1000 USDT"],
             base_currency="USDT",
             default_leverage=Decimal("5.0"),
         )
@@ -107,9 +106,9 @@ def main():
         config_path="probabilistic_trading.strategies.hmm_strategy:HMMStrategyConfig",
         config={
             "instrument_id": instrument.id,
-            "bar_type": BarType.from_str(bar_type),
+            "bar_type": bar_type,
             "prob_threshold": 0.95,
-            "position_size": Decimal("2400.0"),
+            "position_size": Decimal("4000.0"),
         },
     )
 
@@ -119,13 +118,12 @@ def main():
         config_path="probabilistic_trading.models.hmm.hmm_actor:HMMActorConfig",
         config={
             "instrument_id": instrument.id,
-            "bar_type": BarType.from_str(bar_type),
+            "bar_type": bar_type,
             "n_states": 3,
-            "min_training_bars": 5000,  # 7 days = 672 15-minute bars
+            "min_training_bars": 5000,  # 15-minute bars
             "pca_components": 6,
-            "retrain_interval": 5000,  # 7 days = 168 15-minute bars
-            "retrain_window_size": 10000,  # 28 days = 672 15-minute bars
-            "incremental_training": False,  # Incremental training has not been fixed yet.
+            "retrain_interval": 1000,  # hours
+            "retrain_window_size": 8000,  # 15-minute bars
         },
     )
 

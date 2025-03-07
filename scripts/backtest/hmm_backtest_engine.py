@@ -23,7 +23,7 @@ from probabilistic_trading.strategies.hmm_strategy import HMMStrategyConfig
 def main():
     # 設定回測變數
     backtest_time_start = "20240101"
-    backtest_time_end = "20240131"
+    backtest_time_end = "20241031"
     backtest_timerange = f"{backtest_time_start}__{backtest_time_end}"
     backtest_timeframe = "15-MINUTE"
     trader_id = "BACKTESTER-ENGINE-001"
@@ -54,20 +54,20 @@ def main():
         venue=BINANCE,
         oms_type=OmsType.NETTING,
         account_type=AccountType.MARGIN,
-        starting_balances=[Money(75, USDT)],
+        starting_balances=[Money(1000, USDT)],
         base_currency=USDT,
         default_leverage=Decimal("5.0"),
     )
 
     # Load data from your catalog
-    catalog = ParquetDataCatalog(Path("data/binance/catalog"))
+    catalog = ParquetDataCatalog(Path("./data/binance/catalog"))
 
     # First load instruments from catalog
     instruments = catalog.instruments()
     if not instruments:
         raise RuntimeError("No instruments found in catalog")
 
-    instrument = instruments[0]  # Get the first instrument
+    instrument = instruments[7]  # Get the first instrument
     engine.add_instrument(instrument)
 
     # Now load bar data
@@ -91,20 +91,19 @@ def main():
     strategy_config = HMMStrategyConfig(
         instrument_id=instrument.id,
         bar_type=bar_type,
-        prob_threshold=0.85,
-        position_size=Decimal("200"),
+        prob_threshold=0.95,
+        position_size=Decimal("4000"),
     )
     strategy = HMMStrategy(config=strategy_config)
 
     hmm_actor_config = HMMActorConfig(
         instrument_id=instrument.id,
         bar_type=bar_type,
-        n_states=2,
-        min_training_bars=672,
-        pca_components=5,
-        retrain_interval=168,  # 7 * 24 hours
-        retrain_window_size=672,
-        incremental_training=True,
+        n_states=3,
+        min_training_bars=5000,
+        pca_components=6,
+        retrain_interval=1000,  # 7 * 24 hours
+        retrain_window_size=8000,
     )
     hmm_actor = HMMActor(config=hmm_actor_config)
 
