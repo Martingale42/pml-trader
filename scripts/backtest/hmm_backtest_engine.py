@@ -14,10 +14,10 @@ from nautilus_trader.model.identifiers import Venue
 from nautilus_trader.model.objects import Money
 from nautilus_trader.persistence.catalog import ParquetDataCatalog
 
-from probabilistic_trading.model.hmm.hmm_actor import HMMActor
-from probabilistic_trading.model.hmm.hmm_actor import HMMActorConfig
-from probabilistic_trading.strategy.hmm_strategy import HMMStrategy
-from probabilistic_trading.strategy.hmm_strategy import HMMStrategyConfig
+from probabilistic_trading.models.hmm.hmm_actor import HMMActor
+from probabilistic_trading.models.hmm.hmm_actor import HMMActorConfig
+from probabilistic_trading.strategies.hmm_strategy import HMMStrategy
+from probabilistic_trading.strategies.hmm_strategy import HMMStrategyConfig
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
     backtest_timerange = f"{backtest_time_start}__{backtest_time_end}"
     backtest_timeframe = "15-MINUTE"
     trader_id = "BACKTESTER-ENGINE-001"
-    backtest_results_dir = "./backtest_results/"
+    backtest_results_dir = "./scripts/backtest/results/"
 
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     # Create output directory

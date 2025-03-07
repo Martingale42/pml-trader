@@ -1,6 +1,6 @@
 [project]
 name = "probabilistic_trading"
-version = "0.1.1"
+version = "0.1.2"
 description = "probabilistic-based trading system using nautilus_trader"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -23,7 +23,7 @@ dependencies = [
 
 [project.optional-dependencies]
 
-gpu = [
+cuda = [
     "jax[cuda12]==0.4.25",
     "jaxlib[cuda12_pip]==0.4.25",
 ]

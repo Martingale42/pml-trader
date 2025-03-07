@@ -5,9 +5,9 @@ from nautilus_trader.model.data import Bar
 from nautilus_trader.model.data import BarType
 from nautilus_trader.model.data import DataType
 
-from probabilistic_trading.model.hmm import HMMConfig
-from probabilistic_trading.model.hmm import HMMModel
-from probabilistic_trading.model.hmm import TrainingConfig
+from probabilistic_trading.models.hmm import HMMConfig
+from probabilistic_trading.models.hmm import HMMModel
+from probabilistic_trading.models.hmm import TrainingConfig
 
 from .demo_hmm_data import DemoHMMStateData
 

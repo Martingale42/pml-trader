@@ -25,9 +25,9 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
 
-from probabilistic_trading.model.hmm import HMMConfig
-from probabilistic_trading.model.hmm import HMMModel
-from probabilistic_trading.model.hmm import TrainingConfig
+from probabilistic_trading.models.hmm import HMMConfig
+from probabilistic_trading.models.hmm import HMMModel
+from probabilistic_trading.models.hmm import TrainingConfig
 
 
 # %%

@@ -1831,7 +1831,7 @@ wheels = [
 
 [[package]]
 name = "probabilistic-trading"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "dynamax" },
@@ -1865,6 +1865,10 @@ cpu = [
     { name = "jax" },
     { name = "jaxlib" },
 ]
+cuda = [
+    { name = "jax", extra = ["cuda12"] },
+    { name = "jaxlib", extra = ["cuda12-pip"] },
+]
 dev = [
     { name = "black" },
     { name = "docformatter" },
@@ -1873,10 +1877,6 @@ dev = [
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "ruff" },
-]
-gpu = [
-    { name = "jax", extra = ["cuda12"] },
-    { name = "jaxlib", extra = ["cuda12-pip"] },
 ]
 
 [package.metadata]
@@ -1888,10 +1888,10 @@ requires-dist = [
     { name = "dynamax", specifier = "==0.1.5" },
     { name = "jax", marker = "extra == 'all'", specifier = "==0.4.25" },
     { name = "jax", marker = "extra == 'cpu'", specifier = "==0.4.25" },
-    { name = "jax", extras = ["cuda12"], marker = "extra == 'gpu'", specifier = "==0.4.25" },
+    { name = "jax", extras = ["cuda12"], marker = "extra == 'cuda'", specifier = "==0.4.25" },
     { name = "jaxlib", marker = "extra == 'all'", specifier = "==0.4.25" },
     { name = "jaxlib", marker = "extra == 'cpu'", specifier = "==0.4.25" },
-    { name = "jaxlib", extras = ["cuda12-pip"], marker = "extra == 'gpu'", specifier = "==0.4.25" },
+    { name = "jaxlib", extras = ["cuda12-pip"], marker = "extra == 'cuda'", specifier = "==0.4.25" },
     { name = "jupyterlab", specifier = ">=4.3.5" },
     { name = "jupytext", specifier = ">=1.16.7" },
     { name = "lightweight-charts", specifier = ">=2.1" },
@@ -1915,7 +1915,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.6.1" },
     { name = "seaborn", specifier = ">=0.13.2" },
 ]
-provides-extras = ["gpu", "cpu", "dev", "all"]
+provides-extras = ["cuda", "cpu", "dev", "all"]
 
 [[package]]
 name = "prometheus-client"

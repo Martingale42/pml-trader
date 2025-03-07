@@ -59,14 +59,14 @@ def main():
     backtest_timerange = f"{backtest_time_start}_{backtest_time_end}"
     backtest_timeframe = "15-MINUTE"
     trader_id = "BACKTESTER-NODE-002"
-    backtest_results_dir = "./backtest_results/"
+    backtest_results_dir = "./scripts/backtest/results/"
 
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     # Create output directory
     output_dir = Path(backtest_results_dir + f"{trader_id}_{current_time}")
     output_dir.mkdir(parents=True, exist_ok=True)
     # 初始化data catalog
-    catalog = ParquetDataCatalog(Path("../../data/binance/catalog"))
+    catalog = ParquetDataCatalog(Path("/data/binance/catalog"))
 
     # 載入instruments
     instruments = catalog.instruments()

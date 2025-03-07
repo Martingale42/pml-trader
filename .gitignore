@@ -41,7 +41,6 @@ ENV/
 .ipynb_checkpoints
 
 # Project specific
+docs/cline/
 data/
-reference/
-BACKTEST*
-backtest_results/*
+scripts/backtest/results/*
