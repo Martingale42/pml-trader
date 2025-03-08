@@ -42,5 +42,6 @@ ENV/
 
 # Project specific
 docs/cline/
-data/
+data/binance/
+data/databento/
 scripts/backtest/results/*
