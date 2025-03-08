@@ -61,3 +61,21 @@ PRODUCTION_CONFIG = DatabaseConfig(
     ),
     debug=False,
 )
+
+# Docker configuration (when running inside Docker containers)
+DOCKER_CONFIG = DatabaseConfig(
+    postgres=PostgresConfig(
+        host="postgres",  # 使用服務名稱作為主機名
+        port=5432,        # 在 Docker 網絡中使用默認端口
+        database="nautilus_trader",
+        username="nautilus",
+        password="password",
+    ),
+    redis=RedisConfig(
+        host="redis",     # 使用服務名稱作為主機名
+        port=6379,
+        db=0,
+        password=None,
+    ),
+    debug=False,
+)
