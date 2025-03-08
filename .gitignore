@@ -44,4 +44,4 @@ ENV/
 docs/cline/
 data/binance/
 data/databento/
-scripts/backtest/results/*
+trading/backtest/results/*
