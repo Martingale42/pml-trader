@@ -17,7 +17,9 @@ dependencies = [
     "seaborn>=0.13.2",
     "lightweight-charts>=2.1",
     "jupyterlab>=4.3.5",
-    "jupytext>=1.16.7"
+    "jupytext>=1.16.7",
+    "psycopg2-binary>=2.9.1",
+    "redis>=5.2.1",
 ]
 
 
