@@ -10,7 +10,7 @@ dependencies = [
     "polars>=1.24.0",
     "numpy==1.26.4",
     "numba>=0.61.0",
-    "nautilus-trader>=1.211.0",
+    "nautilus-trader @ file:///Users/ohh/Code/nautilus_trader",
     "dynamax==0.1.5",
     "scikit-learn>=1.6.1",
     "matplotlib>=3.10.1",
@@ -25,6 +25,7 @@ dependencies = [
 
 [project.optional-dependencies]
 
+# CUDA 版本
 cuda = [
     "jax[cuda12]==0.4.25",
     "jaxlib[cuda12_pip]==0.4.25",
@@ -165,3 +166,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["probabilistic_trading"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
