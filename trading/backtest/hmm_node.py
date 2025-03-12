@@ -102,8 +102,8 @@ def main():
 
     # 設定Strategy
     importable_strategy = ImportableStrategyConfig(
-        strategy_path="probabilistic_trading.strategies.hmm_strategy:HMMStrategy",
-        config_path="probabilistic_trading.strategies.hmm_strategy:HMMStrategyConfig",
+        strategy_path="pml_trader.strategies.hmm_strategy:HMMStrategy",
+        config_path="pml_trader.strategies.hmm_strategy:HMMStrategyConfig",
         config={
             "instrument_id": instrument.id,
             "bar_type": bar_type,
@@ -114,8 +114,8 @@ def main():
 
     # 設定Actor
     importable_actor = ImportableActorConfig(
-        actor_path="probabilistic_trading.models.hmm.hmm_actor:HMMActor",
-        config_path="probabilistic_trading.models.hmm.hmm_actor:HMMActorConfig",
+        actor_path="pml_trader.models.hmm.hmm_actor:HMMActor",
+        config_path="pml_trader.models.hmm.hmm_actor:HMMActorConfig",
         config={
             "instrument_id": instrument.id,
             "bar_type": bar_type,

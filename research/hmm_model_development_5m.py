@@ -8,9 +8,9 @@ import polars as pl
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from probabilistic_trading.models.hmm import HMMConfig
-from probabilistic_trading.models.hmm import HMMModel
-from probabilistic_trading.models.hmm import TrainingConfig
+from pml_trader.models.hmm import HMMConfig
+from pml_trader.models.hmm import HMMModel
+from pml_trader.models.hmm import TrainingConfig
 
 
 # %%

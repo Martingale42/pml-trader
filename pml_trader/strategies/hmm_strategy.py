@@ -12,7 +12,7 @@ from nautilus_trader.model.identifiers import PositionId
 from nautilus_trader.model.orders import MarketOrder
 from nautilus_trader.trading.strategy import Strategy
 
-from probabilistic_trading.models.hmm.hmm_data import HMMStateData
+from pml_trader.models.hmm.hmm_data import HMMStateData
 
 
 class HMMStrategyConfig(StrategyConfig):

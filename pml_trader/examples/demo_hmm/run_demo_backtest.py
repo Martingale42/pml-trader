@@ -15,9 +15,9 @@ from nautilus_trader.model.objects import Money
 from nautilus_trader.model.objects import Quantity
 from nautilus_trader.persistence.catalog import ParquetDataCatalog
 
-from probabilistic_trading.examples.demo_hmm.demo_hmm_actor import DemoHMMActor
-from probabilistic_trading.examples.demo_hmm.demo_hmm_strategy import DemoHMMStrategy
-from probabilistic_trading.examples.demo_hmm.demo_hmm_strategy import DemoHMMStrategyConfig
+from pml_trader.examples.demo_hmm.demo_hmm_actor import DemoHMMActor
+from pml_trader.examples.demo_hmm.demo_hmm_strategy import DemoHMMStrategy
+from pml_trader.examples.demo_hmm.demo_hmm_strategy import DemoHMMStrategyConfig
 
 
 def main():

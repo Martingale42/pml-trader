@@ -14,12 +14,12 @@ from nautilus_trader.model.identifiers import Venue
 from nautilus_trader.model.objects import Money
 from nautilus_trader.persistence.catalog import ParquetDataCatalog
 
-from probabilistic_trading.infrastructure.config import DEFAULT_CACHE_CONFIG
-from probabilistic_trading.infrastructure.config import DEFAULT_MSG_CONFIG
-from probabilistic_trading.models.hmm.hmm_actor import HMMActor
-from probabilistic_trading.models.hmm.hmm_actor import HMMActorConfig
-from probabilistic_trading.strategies.hmm_strategy import HMMStrategy
-from probabilistic_trading.strategies.hmm_strategy import HMMStrategyConfig
+from pml_trader.infrastructure.config import DEFAULT_CACHE_CONFIG
+from pml_trader.infrastructure.config import DEFAULT_MSG_CONFIG
+from pml_trader.models.hmm.hmm_actor import HMMActor
+from pml_trader.models.hmm.hmm_actor import HMMActorConfig
+from pml_trader.strategies.hmm_strategy import HMMStrategy
+from pml_trader.strategies.hmm_strategy import HMMStrategyConfig
 
 
 def main():
