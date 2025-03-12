@@ -1,9 +1,9 @@
 services:
   redis:
     image: redis:latest
-    container_name: pml_redis
+    container_name: pml-redis
     ports:
-      - "6380:6379" # for local redis
+      - "6379:6379" # for local redis
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -13,10 +13,10 @@ services:
 
 networks:
   app_network:
-    name: pml_network
+    name: pml-network
     driver: bridge
 
 volumes:
   redis_data:
-    name: pml_data
+    name: pml-data
     driver: local

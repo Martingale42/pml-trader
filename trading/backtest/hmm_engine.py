@@ -24,8 +24,8 @@ from pml_trader.strategies.hmm_strategy import HMMStrategyConfig
 
 def main():
     # 設定回測變數
-    backtest_time_start = "20240101"
-    backtest_time_end = "20241031"
+    backtest_time_start = "20231201"
+    backtest_time_end = "20240131"
     backtest_timerange = f"{backtest_time_start}__{backtest_time_end}"
     backtest_timeframe = "15-MINUTE"
     trader_id = "BACKTESTER-ENGINE-001"
