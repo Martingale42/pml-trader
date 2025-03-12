@@ -14,7 +14,8 @@ from nautilus_trader.model.identifiers import Venue
 from nautilus_trader.model.objects import Money
 from nautilus_trader.persistence.catalog import ParquetDataCatalog
 
-from database.integration import create_cache_config
+from probabilistic_trading.infrastructure.config import DEFAULT_CACHE_CONFIG
+from probabilistic_trading.infrastructure.config import DEFAULT_MSG_CONFIG
 from probabilistic_trading.models.hmm.hmm_actor import HMMActor
 from probabilistic_trading.models.hmm.hmm_actor import HMMActorConfig
 from probabilistic_trading.strategies.hmm_strategy import HMMStrategy
@@ -38,11 +39,8 @@ def main():
     # Initialize backtest engine
     engine_config = BacktestEngineConfig(
         trader_id=TraderId(trader_id),
-        cache=create_cache_config(
-            database_type="redis",
-            tick_capacity=50_000,
-            bar_capacity=20_000,
-        ),
+        cache=DEFAULT_CACHE_CONFIG,
+        message_bus=DEFAULT_MSG_CONFIG,
         logging=LoggingConfig(
             log_level="INFO",  # Changed to INFO for less verbose output
             log_directory=str(output_dir),
