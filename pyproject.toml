@@ -10,7 +10,7 @@ dependencies = [
     "polars>=1.24.0",
     "numpy==1.26.4",
     "numba>=0.61.0",
-    "nautilus-trader @ file:///Users/ohh/Code/nautilus_trader",
+    "nautilus-trader @ file:///home/cy/NautilusTraders/nautilus_trader",
     "dynamax==0.1.5",
     "scikit-learn>=1.6.1",
     "matplotlib>=3.10.1",
@@ -25,13 +25,13 @@ dependencies = [
 
 [project.optional-dependencies]
 
-# CUDA 版本
+# cuda version
 cuda = [
     "jax[cuda12]==0.4.25",
     "jaxlib[cuda12_pip]==0.4.25",
 ]
 
-# 標準 CPU 版本
+# cpu version
 cpu = [
     "jax==0.4.25",
     "jaxlib==0.4.25",

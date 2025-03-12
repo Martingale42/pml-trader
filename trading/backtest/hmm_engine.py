@@ -127,6 +127,8 @@ def main():
     print("\nPositions Report:")
     print(engine.trader.generate_positions_report())
 
+    engine.dispose()
+
 
 if __name__ == "__main__":
     try:
