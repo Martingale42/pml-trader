@@ -6,7 +6,7 @@ from nautilus_trader.common.config import MessageBusConfig
 DEFAULT_REDIS_CONFIG = DatabaseConfig(
     type="redis",
     host="localhost",  # Redis host
-    port=6379,  # Redis port
+    port=6380,  # Redis port, default 6379
     username=None,  # Optional username
     password=None,  # Optional password
     ssl=False,  # Whether to use SSL

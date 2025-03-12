@@ -3,7 +3,7 @@ services:
     image: redis:latest
     container_name: pml_redis
     ports:
-      - "6379:6379"
+      - "6380:6379" # for local redis
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
