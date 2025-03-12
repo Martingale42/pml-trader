@@ -1,5 +1,5 @@
 [project]
-name = "pml_trader"
+name = "pml-trader"
 version = "0.2.0"
 description = "probabilistic-based trading system using nautilus_trader"
 readme = "README.md"
