@@ -45,3 +45,5 @@ docs/cline/
 data/binance/
 data/databento/
 trading/backtest/results/*
+
+CLAUDE.md

@@ -10,7 +10,7 @@ dependencies = [
     "polars>=1.24.0",
     "numpy==1.26.4",
     "numba>=0.61.0",
-    "nautilus-trader @ file:///home/cy/NautilusTraders/nautilus_trader",
+    "nautilus-trader>=1.218.0",
     "dynamax==0.1.5",
     "scikit-learn>=1.6.1",
     "matplotlib>=3.10.1",
@@ -26,16 +26,10 @@ dependencies = [
 [project.optional-dependencies]
 
 # cuda version
-cuda = [
-    "jax[cuda12]==0.4.25",
-    "jaxlib[cuda12_pip]==0.4.25",
-]
+cuda = ["jax[cuda12]==0.4.25", "jaxlib[cuda12_pip]==0.4.25"]
 
 # cpu version
-cpu = [
-    "jax==0.4.25",
-    "jaxlib==0.4.25",
-]
+cpu = ["jax==0.4.25", "jaxlib==0.4.25"]
 
 dev = [
     "pytest>=8.3.5",
@@ -44,25 +38,25 @@ dev = [
     "docformatter>=1.7.5",
     "black>=25.1.0",
     "ruff>=0.9.9",
-    "mypy>=1.10.0"
+    "mypy>=1.10.0",
 ]
 
 # 全部依賴（包括開發工具）
 all = [
-    "jax==0.4.25",  # CPU版本
-    "jaxlib==0.4.25",  # CPU版本
+    "jax==0.4.25",         # CPU版本
+    "jaxlib==0.4.25",      # CPU版本
     "pytest>=8.3.4",
     "pre-commit>=4.1.0",
     "pandas-stubs>=2.2.0",
     "docformatter>=1.7.5",
     "black>=25.1.0",
     "ruff>=0.9.9",
-    "mypy>=1.10.0"
+    "mypy>=1.10.0",
 ]
 
-[tool.black]
-target_version = ["py311", "py312"]
-line_length = 100
+# [tool.black]
+# target_version = ["py311", "py312"]
+# line_length = 100
 
 [tool.ruff]
 target-version = "py312"
@@ -84,51 +78,51 @@ exclude = [
 
 [tool.ruff.lint]
 select = [
-    "C4",   # flake8-comprehensions
-    "E",    # pycodestyle errors
-    "F",    # pyflakes
-    "W",    # pycodestyle warnings
-    "C90",  # mccabe
-    "D",    # pydocstyle
-    "UP",   # pyupgrade
-    "S",    # bandit
-    "T10",  # flake8-debugger
-    "ICN",  # flake8-import-conventions
-    "PIE",  # flake8-pie
-    "PYI",  # flake8-pyi
-    "Q",    # flake8-quotes
-    "I",    # isort
-    "RSE",  # flake8-raise
-    "TID",  # flake8-tidy-imports
-    "PD",   # pandas-vet
-    "NPY",  # numpy rules
-    "RUF",  # ruff-specific rules
+    "C4",  # flake8-comprehensions
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "C90", # mccabe
+    "D",   # pydocstyle
+    "UP",  # pyupgrade
+    "S",   # bandit
+    "T10", # flake8-debugger
+    "ICN", # flake8-import-conventions
+    "PIE", # flake8-pie
+    "PYI", # flake8-pyi
+    "Q",   # flake8-quotes
+    "I",   # isort
+    "RSE", # flake8-raise
+    "TID", # flake8-tidy-imports
+    "PD",  # pandas-vet
+    "NPY", # numpy rules
+    "RUF", # ruff-specific rules
 ]
 
 ignore = [
-    "D100",  # Missing docstring in public module
-    "D101",  # Missing docstring in public class
-    "D102",  # Missing docstring in public method
-    "D103",  # Missing docstring in public function
-    "D104",  # Missing docstring in public package
-    "D105",  # Missing docstring in magic method
-    "D107",  # Missing docstring in __init__
-    "D200",  # One-line docstring should fit on one line with quotes
-    "D203",  # 1 blank line required before class docstring
-    "D205",  # 1 blank line required between summary line and description
-    "D212",  # Multi-line docstring summary should start at the first line
-    "D400",  # First line should end with a period
-    "D413",  # Missing blank line after last section
-    "D415",  # First line should end with a period, question mark, or exclamation point
-    "D416",  # Section name should end with a colon
-    "E741",  # Ambiguous variable name
-    "PD901", # DataFrame variable name
+    "D100",   # Missing docstring in public module
+    "D101",   # Missing docstring in public class
+    "D102",   # Missing docstring in public method
+    "D103",   # Missing docstring in public function
+    "D104",   # Missing docstring in public package
+    "D105",   # Missing docstring in magic method
+    "D107",   # Missing docstring in __init__
+    "D200",   # One-line docstring should fit on one line with quotes
+    "D203",   # 1 blank line required before class docstring
+    "D205",   # 1 blank line required between summary line and description
+    "D212",   # Multi-line docstring summary should start at the first line
+    "D400",   # First line should end with a period
+    "D413",   # Missing blank line after last section
+    "D415",   # First line should end with a period, question mark, or exclamation point
+    "D416",   # Section name should end with a colon
+    "E741",   # Ambiguous variable name
+    "PD901",  # DataFrame variable name
     "RUF012", # Mutable class attributes
-    "S101",  # Use of assert detected
-    "S105",  # Possible hardcoded password
-    "S106",  # Possible hardcoded password
-    "S113",  # Requests without timeout
-    "S603",  # Subprocess without input validation
+    "S101",   # Use of assert detected
+    "S105",   # Possible hardcoded password
+    "S106",   # Possible hardcoded password
+    "S113",   # Requests without timeout
+    "S603",   # Subprocess without input validation
 ]
 
 fixable = ["ALL"]
